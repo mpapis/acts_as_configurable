@@ -1,60 +1,41 @@
-%w(error configuration).each do |f|
-  require File.join(File.dirname(__FILE__), 'acts_as_configurable', f)
-end
-
-# dynamic configuration/settings storage
-# for models or classes
-module RPH
-  module ActsAsConfigurable
-    def self.included(receiver)
-      receiver.extend ActMethods
-    end
-    
-    module ActMethods
-      # Examples:
-      #   class API
-      #     acts_as_configurable
-      #     
-      #     configuration do |config|
-      #       config.key = '123456'
-      #       config.user_id = '0001'
-      #     end
-      #   end
-      #   
-      #   $> API.configuration.key      # => '123456'
-      #   $> API.configuration.user_id  # => '0001'
-      #
-      #   class API
-      #     acts_as_configurable :with => :settings
-      #
-      #     settings do |setting|
-      #       setting.key = '123456'
-      #       setting.user_id = '0001'
-      #     end
-      #   end
-      #
-      #   $> API.settings.key       # => '123456'
-      #   $> API.settings.user_id   # => '0001'
-      def acts_as_configurable(options = {})
-        options = {
-          :with => 'configuration'
-        }.merge!(options)
-        
-        class_inheritable_accessor :options
-        extend ClassMethods
-        
-        self.options = options
+module ActsAsConfigurable
+  def self.included(receiver)
+    receiver.extend ActMethods
+  end
+  module ActMethods
+    def acts_as_configurable(options=nil)
+      default_method_name = Configuration.default_method_name || 'configuration'
+      default_klass_name = Configuration.default_klass_name || self
+      default_key_name= Configuration.default_key_name || 'default'
+      method_name = if options.kind_of? Hash
+        options[:name] || default_method_name
+      elsif options.kind_of? String
+        options.blank? ? default_method_name : options
+      elsif options.instance_of? Symbol
+        options
+      else
+        default_method_name
+      end
+      method_name = method_name.to_s if method_name.instance_of?(Symbol)
+      klass_name = options.kind_of?(Hash) ? (options[:for] || default_klass_name) : default_klass_name
+      klass_name = klass_name.name if klass_name.instance_of?(Class)
+      default_key = options.kind_of?(Hash) ? (options[:default] || default_key_name) : default_key_name
+      define_method(method_name.to_sym) { Configuration.settings(klass_name.to_s,default_key.to_s) }
+      cattr_accessor method_name.to_sym
+      instance_eval do
+        method_name+='='
+        send(method_name.to_sym,Configuration.settings(klass_name.to_s,default_key.to_s))
       end
     end
-  
-    module ClassMethods
-      # if the missing method matches the configuration
-      # method, return the configuration for that class;
-      # otherwise, call super to handle normal behavior
-      def method_missing(name, &block)
-        return Configuration.config(self.to_s, &block) if name.to_sym == options[:with].to_sym
-        super
-      end
+  end
+  class Configuration
+    cattr_accessor :default_method_name
+    cattr_accessor :default_klass_name
+    cattr_accessor :default_key_name
+    def self.settings(name='default',default=nil)
+      default||=default_key_name
+      @@settings ||= YAML.load_file("#{RAILS_ROOT}/config/configuration.yml")
+      @@settings[name] || @@settings[default]
     end
   end
 end

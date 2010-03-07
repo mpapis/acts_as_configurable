@@ -1,85 +1,68 @@
 h1. ActsAsConfigurable
 
-Rails plugin that adds dynamic (non-database) configuration settings to any model or class.
+!!! This is an fork of the original, code was completly rewritten, it works differently, read bellow for more informations !!!
+
+Rails plugin that adds dynamic (non-database) configuration settings to any class (also models & controlers).
+
+h2. Installation
+
+In rails application directory call:
+<pre><code>
+script/plugin install git@github.com:mpapis/acts_as_configurable.git
+</code></pre>
 
 h2. Examples
 
-Basic usage:
+Setup file:
+<pre><code>
+default:
+  :setting1: 1st
+Book:
+  :setting1: 2nd
+settings:
+  :setting1: 3rd
+</code></pre>
 
 <pre><code>
 class User < ActiveRecord::Base
+  acts_as_configurable  
+end
+puts "#{User.configuration[:setting1]}"
+puts "#{User.new.configuration[:setting1]}"
+class Book < ActiveRecord::Base
   acts_as_configurable
-  
-  configuration do |config|
-    config.passwords.min_length = 6
-    config.passwords.max_length = 12  
-  end
 end
-</code></pre>
-
-And then to access that configuration, simply call:
-
-<pre><code>
-$> User.configuration
-$> => {:passwords => { :min_length => 6, :max_length => 12 }}
-</code></pre>
-
-Or just keep going down the chain to get to the specifics:
-
-<pre><code>
-$> User.configuration.passwords
-$> => {:min_length => 6, :max_length => 12}
-$> User.configuration.passwords.min_length
-$> => 6
-</code></pre>
-
-Now, granted that a "configuration" class method is common enough that there may be a case
-where you have a conflict. Well, you can also configure that part:
-
-<pre><code>
-class User < ActiveRecord::Base
-  acts_as_configurable :with => :settings
-  
-  settings do |setting|
-    setting.passwords.min_length = 6
-    setting.passwords.max_length = 12
-  end
+puts "#{Book.configuration[:setting1]}"
+class Comment < ActiveRecord::Base
+  acts_as_configurable :defult => :settings
 end
-</code></pre>
-
-Then just use "settings" in place of "configuration" when accessing the data.
-
-<pre><code>
-$> User.settings.passwords
-$> => {:min_length => 6, :max_length => 12}
-</code></pre>
-
-h2. Nested configuration
-
-You can also nest configuration settings to keep things grouped nicely.
-
-<pre><code>
-class User < ActiveRecord::Base
-  acts_as_configurable
-  
-  configuration do |config|
-    config.passwords do |p|
-      p.min_length = 6
-      p.max_length = 12
-    end
-    config.accounts do |a|
-      # ...
-    end
-  end
+puts "#{Comment.configuration[:setting1]}"
+class Address < ActiveRecord::Base
+  acts_as_configurable :conf
 end
+puts "#{Address.conf[:setting1]}"
+class Post < ActiveRecord::Base
+  acts_as_configurable :conf, :for => :settings
+  acts_as_configurable :conf_book, :for => Book
+end
+puts "#{Post.conf[:setting1]}"
+puts "#{Post.new.conf_book[:setting1]}"
 </code></pre>
+
+h2. Default settings for :default, :name, :for, :default can be overwritten using:
+<pre><code>
+ActsAsConfigurable::Configuration.default_method_name - set new default for name, if it is not set then 'configuration' is used
+ActsAsConfigurable::Configuration.default_klass_name - set new default for 'for', if not set It tryes to use class name, but if not available 'default' will be used
+ActsAsConfigurable::Configuration.default_key_name - another default definition, normally 'default' is good
+</code></pre>
+
+All options can be specified as strings or symbols, additionally :for can also work with Class
 
 h2. Dependencies
 
-This plugin mixes directly into @Object@, so there's no dependency on another library. While the 
-examples above are all @ActiveRecord@ models, they don't have to be. Any class can act as configurable.
+This plugin mixes directly into @Object@, so there's no dependency on another library. Any class can act as configurable.
 
-Actually, @ActiveSupport@ is required (thanks to @class_inheritable_accessor@), but since this is a 
+Actually, @ActiveSupport@ is required (thanks to @cattr_accessor@), but since this is a
 plugin for a Rails application, there shouldn't be any issues there.
 
 h2. Credits
@@ -88,7 +71,8 @@ h2. Credits
 His original implementation was intended for application wide configuration settings. You can find
 his post about it "here":http://slateinfo.blogs.wvu.edu/blog/2007/10/29/custom-configuration-settings-made-easy. 
 
-With my version, you can have the convenience of his configuration, but exclusive to the class in 
-which it's contained. Plus it's now a plugin.
+"Ryan Heath":http://rpheath.com/posts/357-rails-plugin-acts-as-configurable is the author of original plugin.
 
-(c) 2008 Ryan Heath and Chris Scharf, released under the MIT license
+With my version you can have the convenience of storing configuration in yaml file - you do not have to change code to change configuration.
+
+(c) 2010 Michal Papis, Ryan Heath and Chris Scharf, released under the MIT license

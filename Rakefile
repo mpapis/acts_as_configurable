@@ -1,15 +1,12 @@
 require 'rake'
-require 'rake/testtask'
 require 'rake/rdoctask'
 
 desc 'Default: run unit tests.'
 task :default => :test
 
 desc 'Test the acts_as_configurable plugin.'
-Rake::TestTask.new(:test) do |t|
-  t.libs << 'lib'
-  t.pattern = 'test/**/*_test.rb'
-  t.verbose = true
+task :test do |t|
+  system 'spec spec/*_spec.rb'
 end
 
 desc 'Generate documentation for the acts_as_configurable plugin.'
