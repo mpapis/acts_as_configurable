@@ -46,3 +46,6 @@ class Settings8
   acts_as_configurable :name=>'conf1', :for => Settings1
   acts_as_configurable :name=>'conf2', :for => Settings2
 end
+class Settings9
+  acts_as_configurable :field => :allow_comments
+end

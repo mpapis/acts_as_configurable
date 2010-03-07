@@ -4,3 +4,4 @@ Settings2:
   :first: 2nd
 settings:
   :first: 3rd
+allow_comments: false

@@ -4,6 +4,7 @@ module ActsAsConfigurable
   end
   module ActMethods
     def acts_as_configurable(options=nil)
+      options[:name]=options[:for]=options[:field] if options.kind_of?(Hash) and options[:field]
       default_method_name = Configuration.default_method_name || 'configuration'
       default_klass_name = Configuration.default_klass_name || self
       default_key_name= Configuration.default_key_name || 'default'
@@ -20,7 +21,6 @@ module ActsAsConfigurable
       klass_name = options.kind_of?(Hash) ? (options[:for] || default_klass_name) : default_klass_name
       klass_name = klass_name.name if klass_name.instance_of?(Class)
       default_key = options.kind_of?(Hash) ? (options[:default] || default_key_name) : default_key_name
-      define_method(method_name.to_sym) { Configuration.settings(klass_name.to_s,default_key.to_s) }
       cattr_accessor method_name.to_sym
       instance_eval do
         method_name+='='
@@ -35,7 +35,7 @@ module ActsAsConfigurable
     def self.settings(name='default',default=nil)
       default||=default_key_name
       @@settings ||= YAML.load_file("#{RAILS_ROOT}/config/configuration.yml")
-      @@settings[name] || @@settings[default]
+      @@settings.has_key?(name)  ? @@settings[name] : @@settings[default]
     end
   end
 end

@@ -47,4 +47,7 @@ describe "ActsAsConfigurable" do
     Settings8 .conf1[:first].should eql '1st'
     Settings8 .conf2[:first].should eql '2nd'
   end
+  it "should work with field definition" do
+    Settings9 .allow_comments.should eql false
+  end
 end
